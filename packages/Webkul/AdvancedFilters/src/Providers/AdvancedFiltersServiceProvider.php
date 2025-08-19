@@ -4,6 +4,8 @@ namespace Webkul\AdvancedFilters\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Event;
+use  Webkul\Product\Repositories\ProductRepository as BaseProductRepository;
+use  Webkul\AdvancedFilters\Repositories\ProductRepository as CustomProductRepository;
 
 class AdvancedFiltersServiceProvider extends ServiceProvider
 {
@@ -22,13 +24,17 @@ class AdvancedFiltersServiceProvider extends ServiceProvider
 
         $this->loadTranslationsFrom(__DIR__ . '/../Resources/lang', 'advancedfilters');
 
+        $this->app->bind(BaseProductRepository::class, CustomProductRepository::class);
+
         $this->publishes([
             __DIR__ . '/../Resources/views/components/products/card.blade.php' 
                 => resource_path('themes/default/views/components/products/card.blade.php'),
-        ]);
-        $this->publishes([
+
             __DIR__ . '/../Resources/views/products/view.blade.php' 
                 => resource_path('themes/default/views/products/view.blade.php'),
+
+            __DIR__ . '/../Resources/views/categories/filters.blade.php' 
+                => resource_path('themes/default/views/categories/filters.blade.php'),
         ]);
 
         $this->loadViewsFrom(__DIR__ . '/../Resources/views', 'advancedfilters');
