@@ -22,6 +22,15 @@ class AdvancedFiltersServiceProvider extends ServiceProvider
 
         $this->loadTranslationsFrom(__DIR__ . '/../Resources/lang', 'advancedfilters');
 
+        $this->publishes([
+            __DIR__ . '/../Resources/views/components/products/card.blade.php' 
+                => resource_path('themes/default/views/components/products/card.blade.php'),
+        ]);
+        $this->publishes([
+            __DIR__ . '/../Resources/views/products/view.blade.php' 
+                => resource_path('themes/default/views/products/view.blade.php'),
+        ]);
+
         $this->loadViewsFrom(__DIR__ . '/../Resources/views', 'advancedfilters');
 
         Event::listen('bagisto.admin.layout.head', function($viewRenderEventManager) {
