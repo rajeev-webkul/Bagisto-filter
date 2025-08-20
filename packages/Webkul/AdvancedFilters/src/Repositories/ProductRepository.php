@@ -3,6 +3,8 @@
 namespace Webkul\AdvancedFilters\Repositories;
 use  Webkul\Product\Repositories\ProductRepository as BaseProductRepository;
 use Illuminate\Support\Facades\DB;
+use Webkul\Attribute\Enums\AttributeTypeEnum;
+
 
 
 class ProductRepository extends BaseProductRepository{
