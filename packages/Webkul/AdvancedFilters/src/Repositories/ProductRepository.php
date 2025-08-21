@@ -18,6 +18,9 @@ class ProductRepository extends BaseProductRepository{
             $params['name'] = $params['query'];
         }
 
+        $sortOptions = $this->getSortOptions($params);
+        
+
         $query = $this->with([
             'attribute_family',
             'images',
@@ -33,6 +36,11 @@ class ProductRepository extends BaseProductRepository{
             'variants.inventory_indices',
         ])->scopeQuery(function ($query) use ($params) {
             $prefix = DB::getTablePrefix();
+
+             $sortOptions = [
+                'sort' => 'orders_count',
+                'order' => 'desc',
+            ];
 
             $qb = $query->distinct()
                 ->select('products.*')
@@ -76,6 +84,14 @@ class ProductRepository extends BaseProductRepository{
             if (! empty($params['discount'])) {
                 $qb->whereRaw('((price - special_price) / price) * 100 >= ?', [$params['discount']]);
             }
+
+            $qb->leftJoin('order_items', 'products.id', '=', 'order_items.product_id')
+            ->leftJoin('orders', function ($join) {
+                $join->on('order_items.order_id', '=', 'orders.id')
+                        ->where('orders.status', 'completed');
+            })
+            ->groupBy('products.id')
+            ->orderByRaw('COUNT(order_items.id) ' . $sortOptions['order']);
 
             if (! empty($params['type'])) {
                 $qb->where('products.type', $params['type']);
