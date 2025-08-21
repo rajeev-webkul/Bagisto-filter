@@ -179,7 +179,7 @@
                     <!-- Search Box For Options -->
                     <div
                         class="flex flex-col gap-1"
-                        v-if="filter.type !== 'boolean'"
+                        v-if="filter.type !== 'boolean' && filter.id !== 'popular'"
                     >
                         <div class="relative">
                             <div class="icon-search pointer-events-none absolute top-3 flex items-center text-2xl max-md:text-xl max-sm:top-2.5 ltr:left-3 rtl:right-3"></div>
@@ -385,7 +385,6 @@
                             ],
                         });
 
-
                         // Category Filter
                         this.filters.available.unshift({
                             id: 'category',
@@ -396,7 +395,6 @@
                         });
 
                         // Availability Filter
-                                               
                         this.filters.available.push({
                             id: 'availability',
                             name: 'Availability',
@@ -410,8 +408,6 @@
                             ],
                         });
 
-
-                                               
                         this.filters.available.push({
                             id: 'offers',
                             name: 'Offers',
@@ -422,6 +418,7 @@
                                 { id: 'b1g1', name: 'Buy 1 Get 1' }
                             ],
                         });
+
                         // Discount Filter (percentage ranges)
                         this.filters.available.push({
                             id: 'discount',
@@ -436,6 +433,16 @@
                             ],
                         });
 
+                        // Add Popular Filter LAST in the list
+                        this.filters.available.push({
+                            id: 'popular',
+                            name: 'Popular Products', 
+                            code: 'popular',
+                            type: 'checkbox',
+                            options: [
+                                { id: 'top_5', name: 'Show Top 5 Popular Products' },
+                            ],
+                        });
 
                     })
                     .catch((error) => {
@@ -550,7 +557,7 @@
 
                 fetchFilterOptions(replace = true) {
                     // List of virtual filters with predefined options
-                    const virtualFilters = ['ratings', 'availability', 'offers', 'discount', 'category'];
+                    const virtualFilters = ['ratings', 'availability', 'offers', 'discount', 'category', 'popular'];
 
                     if (virtualFilters.includes(this.filter.id)) {
                         // Use predefined options directly
@@ -586,7 +593,6 @@
                 },
             },
         });
-
 
         app.component('v-price-filter', {
             template: '#v-price-filter-template',
