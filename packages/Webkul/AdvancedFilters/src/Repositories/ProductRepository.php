@@ -69,17 +69,50 @@ class ProductRepository extends BaseProductRepository{
             }
 
 
+            
             if (isset($params['availability'])) {
-                if ($params['availability'] == 1) {
-                    $qb->whereHas('inventories', function($q) {
-                        $q->where('qty', '>', 0);
-                    });
-                } else {
-                    $qb->whereHas('inventories', function($q) {
+                if ($params['availability'] === 'out_of_stock') {
+                    
+                    $qb->whereHas('inventories', function ($q) {
                         $q->where('qty', '<=', 0);
                     });
                 }
+
+                if ($params['availability'] === 'exclude_out_of_stock') {
+                    
+                    $qb->whereHas('inventories', function ($q) {
+                        $q->where('qty', '>=', 0);
+                    });
+                }
             }
+
+
+            // Offers Filter
+            if (! empty($params['offers'])) {
+
+                if (in_array('on_sale', $params['offers'])) {
+                    $qb->whereRaw("JSON_EXTRACT(products.additional, '$.special_price') IS NOT NULL")
+                    ->whereRaw("JSON_EXTRACT(products.additional, '$.special_price') < JSON_EXTRACT(products.additional, '$.price')");
+                }
+
+                if (in_array('b1g1', $params['offers'])) {
+                    $qb->orWhereRaw("JSON_EXTRACT(products.additional, '$.b1g1') = 1");
+                }
+            }
+
+
+            if (!empty($params['popular'])) {
+                $qb->leftJoin('order_items', 'products.id', '=', 'order_items.product_id')
+                ->leftJoin('orders', function ($join) {
+                    $join->on('order_items.order_id', '=', 'orders.id')
+                            ->where('orders.status', 'completed'); 
+                })
+                ->groupBy('products.id')
+                ->orderByRaw('COUNT(order_items.id) DESC') 
+                ->limit(5); 
+            }
+
+
 
             if (! empty($params['discount'])) {
                 $qb->whereRaw('((price - special_price) / price) * 100 >= ?', [$params['discount']]);

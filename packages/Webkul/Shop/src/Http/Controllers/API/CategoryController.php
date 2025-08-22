@@ -12,6 +12,8 @@ use Webkul\Shop\Http\Resources\AttributeOptionResource;
 use Webkul\Shop\Http\Resources\AttributeResource;
 use Webkul\Shop\Http\Resources\CategoryResource;
 use Webkul\Shop\Http\Resources\CategoryTreeResource;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 class CategoryController extends APIController
 {
@@ -121,5 +123,35 @@ class CategoryController extends APIController
         return new JsonResource([
             'max_price' => core()->convertPrice($maxPrice),
         ]);
+    }
+
+    /**
+     * Store customer feedback
+     */
+    public function storeFeedback(Request $request)
+    {
+        try {
+            DB::table('customer_feedback')->insert([
+                'response' => $request->input('response'),
+                'feedback' => $request->input('feedback'),
+                'page_url' => $request->input('page_url'),
+                'category_id' => $request->input('category_id') === 'null' ? null : $request->input('category_id'),
+                'session_id' => session()->getId(),
+                'ip_address' => $request->ip(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Thank you for your feedback!'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to submit feedback. Please try again.'
+            ], 500);
+        }
     }
 }

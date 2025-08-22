@@ -141,6 +141,9 @@
                     @values-applied="applyFilter(filter, $event)"
                 >
                 </v-filter-item>
+
+                <!-- Customer Feedback Section -->
+                <v-customer-feedback></v-customer-feedback>
             </div>
         </template>
     </script>
@@ -336,6 +339,72 @@
         </div>
     </script>
 
+    <script type="text/x-template" id="v-customer-feedback-template">
+        <div class="border-t border-gray-300 mt-6 pt-5 px-4 sm:px-6 bg-white rounded-lg shadow-sm">
+           
+            <div class="mb-4">
+                <h3 class="text-base font-semibold text-gray-900 mb-1">
+                    Did you find what you were looking for?
+                </h3>
+                <p class="text-sm text-gray-500">
+                    Help us improve your experience
+                </p>
+            </div>
+
+          
+            <div v-if="submitted" class="text-center py-6">
+                <div class="text-green-500 text-4xl mb-3">✅</div>
+                <p class="text-sm text-green-700 font-medium">
+                    Thank you for your feedback!
+                </p>
+            </div>
+
+
+            <div v-else>
+                
+                <div class="flex gap-3 mb-4">
+                    <button
+                        @click="response = 'yes'"
+                        :class="response === 'yes' ? 'bg-gray-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-green-50'"
+                        class="flex-1 py-2 px-4 text-sm font-semibold rounded-lg shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    >
+                        Yes
+                    </button>
+
+                    <button
+                        @click="response = 'no'"
+                        :class="response === 'no' ? 'bg-gray-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-50'"
+                        class="flex-1 py-2 px-4 text-sm font-semibold rounded-lg shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-400"
+                    >
+                        No
+                    </button>
+                </div>
+
+          
+                <div v-if="response" class="mb-4">
+                    <textarea
+                        v-model="feedback"
+                        :placeholder="response === 'yes' ? 'What helped you find what you needed?' : 'What were you looking for? How can we improve?'"
+                        class="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all duration-200"
+                        rows="4"
+                    ></textarea>
+                </div>
+
+   
+                <button
+                    v-if="response"
+                    @click="submitFeedback"
+                    :disabled="loading"
+                    class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 text-sm font-semibold rounded-lg shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                >
+                    <span v-if="loading">Submitting...</span>
+                    <span v-else>Submit Feedback</span>
+                </button>
+            </div>
+        </div>
+    </script>
+
+
     <script type='module'>
         app.component('v-filters', {
             template: '#v-filters-template',
@@ -402,7 +471,6 @@
                             type: 'availability',
                             type: 'checkbox', 
                             options: [
-                                { id: 'in_stock', name: 'In Stock' },
                                 { id: 'out_of_stock', name: 'Out of Stock' },
                                 { id: 'exclude_out_of_stock', name: 'Exclude Out of Stock' },
                             ],
@@ -560,13 +628,13 @@
                     const virtualFilters = ['ratings', 'availability', 'offers', 'discount', 'category', 'popular'];
 
                     if (virtualFilters.includes(this.filter.id)) {
-                        // Use predefined options directly
+                        
                         this.options = this.filter.options;
                         this.meta = { total: this.options.length, current_page: 1, last_page: 1 };
                         return;
                     }
 
-                    // Real attribute options API call
+                    
                     this.isLoadingMore = true;
 
                     const url = `{{ route("shop.api.categories.attribute_options", 'attribute_id') }}`.replace('attribute_id', this.filter.id);
@@ -659,6 +727,57 @@
                     this.$emit('set-price-range', this.priceRange);
                 },
             },
+        });
+
+        
+        app.component('v-customer-feedback', {
+            template: '#v-customer-feedback-template',
+
+            data() {
+                return {
+                    response: '',
+                    feedback: '',
+                    loading: false,
+                    submitted: false
+                };
+            },
+
+            methods: {
+                async submitFeedback() {
+                    if (!this.response) return;
+                    
+                    this.loading = true;
+                    
+                    const payload = {
+                        response: this.response,
+                        feedback: this.feedback,
+                        page_url: window.location.href,
+                        category_id: "{{ isset($category) ? $category->id : 'null' }}",
+                        _token: document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                    };
+
+                    try {
+                        // Use the correct API endpoint with axios (Bagisto's built-in HTTP client)
+                        const response = await this.$axios.post('{{ route("shop.api.categories.feedback") }}', payload);
+
+                        if (response.status === 200) {
+                            this.submitted = true;
+                            this.loading = false;
+                        } else {
+                            throw new Error('Failed to submit feedback');
+                        }
+                    } catch (error) {
+                        console.error('Error submitting feedback:', error);
+                        this.loading = false;
+                        
+                        let errorMessage = 'There was an error submitting your feedback. Please try again.';
+                        if (error.response && error.response.data && error.response.data.message) {
+                            errorMessage = error.response.data.message;
+                        }
+                        alert(errorMessage);
+                    }
+                }
+            }
         });
     </script>
 @endPushOnce
